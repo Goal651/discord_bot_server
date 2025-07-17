@@ -14,7 +14,7 @@ export const errorHandler = (socket: Socket) => {
 
   // Handle uncaught exceptions in socket handlers
   const originalEmit = socket.emit
-  socket.emit = function(event: string, ...args: any[]) {
+  socket.emit = function(event: string, ...args: unknown[]) {
     try {
       return originalEmit.call(this, event, ...args)
     } catch (error) {

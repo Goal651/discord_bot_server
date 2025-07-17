@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/discord/channels - Get all accessible Discord text channels for the authenticated user
 router.get('/channels', authMiddleware, async (req, res) => {
   try {
-    const discord_id = (req.user as any)?.discord_id; // from JWT payload
+    const discord_id = (req.user)?.discord_id; // from JWT payload
     if (!discord_id) {
       res.status(401).json({
         status: 'failed',
@@ -22,7 +22,7 @@ router.get('/channels', authMiddleware, async (req, res) => {
       data: channels,
       message: 'Fetched accessible channels'
     });
-  } catch (error) {
+  } catch  {
     res.json({
       status: 'failed',
       data: [],
