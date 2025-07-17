@@ -50,7 +50,7 @@ export class DiscordHandler {
     try {
       // Send available channels
       const channels = await this.discordBot.getUserChannels(this.socket.data.discordId);
-      this.socket.emit('channels_list', channels);
+      this.socket.emit('channels', channels);
 
       // Send user info
       this.socket.emit('user_info', {

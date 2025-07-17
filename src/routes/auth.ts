@@ -8,7 +8,7 @@ const router = Router();
 
 const CLIENT_ID = process.env['DISCORD_CLIENT_ID']!;
 const CLIENT_SECRET = process.env['DISCORD_CLIENT_SECRET']!;
-const REDIRECT_URI = process.env['DISCORD_REDIRECT_URI']!; // e.g. http://localhost:3001/api/auth/discord/callback
+const REDIRECT_URI = process.env['DISCORD_REDIRECT_URI']!; 
 const FRONTEND_URL = process.env['FRONTEND_URL'] || 'http://localhost:3000';
 
 // 1. Redirect to Discord OAuth2 with state for CSRF protection
