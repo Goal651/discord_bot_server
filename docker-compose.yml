@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  discord-backend:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - JWT_SECRET=dev_jwt_secret_change_in_production
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - discord-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - discord-network
+    command: redis-server --appendonly yes
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - discord-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  discord-network:
+    driver: bridge 

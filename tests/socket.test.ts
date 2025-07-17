@@ -1,0 +1,89 @@
+jest.setTimeout(30000); // 30 seconds
+import { createServer } from "http";
+import Client, { Socket as ClientSocket } from "socket.io-client";
+import { Server } from "socket.io";
+import { setupDiscordNamespace } from "../src/namespaces/discord";
+import { generateToken } from "../src/middleware/auth";
+import { DiscordBot } from "../src/services/discord-bot";
+
+const TEST_USER = {
+  discord_id: process.env['DISCORD_CLIENT_ID'] || '',
+  username: 'wilsongoal_35900',
+  email: 'bugiriwilson651@gmail.com',
+  is_bot: false,
+  created_at: '',
+  updated_at: ''
+};
+const GENERAL_CHANNEL_ID = process.env['DISCORD_GENERAL_CHANNEL']
+
+describe('Discord Socket.IO Server ', () => {
+  let io: Server;
+  let clientSocket: ClientSocket;
+  let httpServer: any;
+  let port: number;
+
+  beforeAll(async () => {
+    try {
+      httpServer = createServer();
+      io = new Server(httpServer);
+
+      // Initialize Discord bot with the real io instance
+      const discordBot = DiscordBot.getInstance();
+      const botToken = process.env['DISCORD_BOT_TOKEN'];
+      if (!botToken) {
+        console.warn('⚠️  No Discord bot token provided. Bot functionality will be disabled.');
+      } else {
+        await discordBot.initialize(botToken, io);
+        console.log('✅ Discord bot initialized');
+      }
+      setupDiscordNamespace(io);
+      const token = generateToken(TEST_USER);
+      await new Promise<void>(resolve => {
+        httpServer.listen(() => {
+          port = (httpServer.address() as any).port;
+          clientSocket = Client(`http://localhost:${port}/discord`, {
+            auth: { token }
+          });
+          clientSocket.on('connect', resolve);
+        });
+      });
+    } catch (err) {
+      console.error('beforeAll error', err)
+    }
+  });
+
+  afterAll(() => {
+    io.close();
+    clientSocket.disconnect();
+    httpServer.close();
+  });
+
+  test('should get channels and include general', (done) => {
+    clientSocket.emit('get_channels', (response: any) => {
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      // Check that general is in the list
+      const found = response.channels.some((ch: any) => ch.id === GENERAL_CHANNEL_ID);
+      expect(found).toBe(true);
+      done();
+    });
+  });
+
+  test('should join general channel', (done) => {
+    clientSocket.emit('join_channel', { channelId: GENERAL_CHANNEL_ID }, (response: any) => {
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.channelId).toBe(GENERAL_CHANNEL_ID);
+      done();
+    });
+  });
+
+  test('should leave general channel',(done)=>{
+    clientSocket.emit('leave_channel',{channelId:GENERAL_CHANNEL_ID},(response:any)=>{
+      expect(response).toBeDefined();
+      expect(response.success).toBe(true);
+      expect(response.channelId).toBe(GENERAL_CHANNEL_ID);
+      done()
+    })
+  })
+});
