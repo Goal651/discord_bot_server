@@ -8,6 +8,5 @@ dotenv.config({ path: '.env' });
 process.env['NODE_ENV'] = 'test';
 
 
-// Global test timeout
-// @ts-ignore - Jest globals
+
 jest.setTimeout(10000); 

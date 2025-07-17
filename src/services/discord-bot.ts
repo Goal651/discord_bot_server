@@ -1,6 +1,6 @@
-import { Client, GatewayIntentBits, type Message, type TextChannel } from 'discord.js';
+import { Client, GatewayIntentBits, PartialMessage, type Message, type TextChannel } from 'discord.js';
 import type { Server } from 'socket.io';
-import { DiscordMessage } from '../types';
+import { DiscordChannel, DiscordMessage } from '../types';
 
 export class DiscordBot {
   private static instance: DiscordBot;
@@ -108,7 +108,7 @@ export class DiscordBot {
     }
   }
 
-  private async handleMessageDelete(message: any) {
+  private async handleMessageDelete(message: Message|PartialMessage) {
     try {
 
       // Broadcast deletion
@@ -199,7 +199,7 @@ export class DiscordBot {
     }
   }
 
-  async sendMessage(channelId: string, content: string, userId: string) {
+  async sendMessage(channelId: string, content: string) {
     try {
       const channel = await this.client.channels.fetch(channelId);
 
@@ -243,7 +243,7 @@ export class DiscordBot {
 
   async getUserChannels(userId: string) {
     try {
-      const channels: any[] = [];
+      const channels: DiscordChannel[] = [];
 
       for (const guild of this.client.guilds.cache.values()) {
         const member = await guild.members.fetch(userId).catch(() => null);

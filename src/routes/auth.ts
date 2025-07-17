@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import type { AuthPayload, ApiResult } from '../types';
+import type { AuthPayload} from '../types';
 import crypto from 'crypto';
 
 const router = Router();

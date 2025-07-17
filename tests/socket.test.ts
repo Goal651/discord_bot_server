@@ -1,10 +1,11 @@
 jest.setTimeout(30000); // 30 seconds
-import { createServer } from "http";
+import { createServer, Server as HttpServer } from "http";
 import Client, { Socket as ClientSocket } from "socket.io-client";
 import { Server } from "socket.io";
 import { setupDiscordNamespace } from "../src/namespaces/discord";
 import { generateToken } from "../src/middleware/auth";
 import { DiscordBot } from "../src/services/discord-bot";
+import { DiscordChannel, GetChannelsResponse, LeaveChannelResponse } from "../src/types";
 
 const TEST_USER = {
   discord_id: process.env['DISCORD_CLIENT_ID'] || '',
@@ -19,7 +20,7 @@ const GENERAL_CHANNEL_ID = process.env['DISCORD_GENERAL_CHANNEL']
 describe('Discord Socket.IO Server ', () => {
   let io: Server;
   let clientSocket: ClientSocket;
-  let httpServer: any;
+  let httpServer: HttpServer;
   let port: number;
 
   beforeAll(async () => {
@@ -40,7 +41,10 @@ describe('Discord Socket.IO Server ', () => {
       const token = generateToken(TEST_USER);
       await new Promise<void>(resolve => {
         httpServer.listen(() => {
-          port = (httpServer.address() as any).port;
+          const address = httpServer.address();
+          if (address && typeof address === 'object') {
+            port = address.port;
+          }
           clientSocket = Client(`http://localhost:${port}/discord`, {
             auth: { token }
           });
@@ -59,18 +63,18 @@ describe('Discord Socket.IO Server ', () => {
   });
 
   test('should get channels and include general', (done) => {
-    clientSocket.emit('get_channels', (response: any) => {
+    clientSocket.emit('get_channels', (response: GetChannelsResponse) => {
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
       // Check that general is in the list
-      const found = response.channels.some((ch: any) => ch.id === GENERAL_CHANNEL_ID);
+      const found = response.channels.some((ch: DiscordChannel) => ch.id === GENERAL_CHANNEL_ID);
       expect(found).toBe(true);
       done();
     });
   });
 
   test('should join general channel', (done) => {
-    clientSocket.emit('join_channel', { channelId: GENERAL_CHANNEL_ID }, (response: any) => {
+    clientSocket.emit('join_channel', { channelId: GENERAL_CHANNEL_ID }, (response: LeaveChannelResponse) => {
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
       expect(response.channelId).toBe(GENERAL_CHANNEL_ID);
@@ -78,8 +82,8 @@ describe('Discord Socket.IO Server ', () => {
     });
   });
 
-  test('should leave general channel',(done)=>{
-    clientSocket.emit('leave_channel',{channelId:GENERAL_CHANNEL_ID},(response:any)=>{
+  test('should leave general channel', (done) => {
+    clientSocket.emit('leave_channel', { channelId: GENERAL_CHANNEL_ID }, (response: LeaveChannelResponse) => {
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
       expect(response.channelId).toBe(GENERAL_CHANNEL_ID);

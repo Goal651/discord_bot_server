@@ -78,13 +78,14 @@ app.get('/', (_req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Express error:', err);
   res.status(500).json({
     error: 'Internal server error',
     message: process.env['NODE_ENV'] === 'development' ? err.message : 'Something went wrong',
     timestamp: new Date().toISOString()
   });
+  _next()
 });
 
 // 404 handler

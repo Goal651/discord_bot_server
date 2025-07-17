@@ -1,7 +1,6 @@
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import type { Socket } from 'socket.io';
 import { AuthPayload } from '../types';
-import type { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import type { Request, Response, NextFunction } from 'express';
 declare module 'socket.io' {
   interface SocketData {
@@ -9,7 +8,7 @@ declare module 'socket.io' {
     userId?: string;
     discordId?: string;
     permissions?: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   }
 }
 
@@ -23,7 +22,7 @@ export const authenticateSocket = async (socket: Socket, next: (err?: Error) => 
     }
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env['JWT_SECRET']!) as AuthPayload;
+    const decoded = jwt.verify(token, process.env['JWT_SECRET'] as string) as AuthPayload;
     console.log(decoded)
     // Validate required fields
     if (!decoded.username || !decoded.discord_id) {
@@ -37,7 +36,7 @@ export const authenticateSocket = async (socket: Socket, next: (err?: Error) => 
     console.log(`🔐 User ${decoded.username} (${decoded.discord_id}) authenticated`);
     next();
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Authentication error:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
@@ -63,24 +62,9 @@ export const requirePermission = (permission: string) => {
       }
 
       next();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Permission check error:', error);
       return next(new Error('Permission check failed'));
-    }
-  };
-};
-
-export const requireChannelAccess = (channelId: string) => {
-  return async (socket: Socket, next: (err?: Error) => void) => {
-    try {
-      if (!socket.data.userId) {
-        return next(new Error('Authentication required'));
-      }
-
-      next();
-    } catch (error) {
-      console.error('Channel access check error:', error);
-      return next(new Error('Channel access check failed'));
     }
   };
 };
@@ -91,10 +75,10 @@ export const generateToken = (payload: AuthPayload): string => {
   console.log(secret)
   if (!secret) throw new Error('JWT_SECRET is not set');
   const options: SignOptions = {
-    expiresIn: (process.env['JWT_EXPIRES_IN'] || '7d') as any
+    expiresIn: '7d'
   };
   return jwt.sign(
-    payload as Record<string, any>,
+    payload as unknown as Record<string, unknown>,
     secret as Secret,
     options
   );
@@ -118,7 +102,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     const user = verifyToken(token!); // uses your existing helper
     req.user = user;
     next();
-  } catch (error) {
+  } catch  {
     res.status(401).json({ status: 'failed', message: 'Invalid or expired token', data: [] });
     return
   }

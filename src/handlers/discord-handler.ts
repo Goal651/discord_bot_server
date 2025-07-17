@@ -1,6 +1,20 @@
 import type { Socket, Namespace } from 'socket.io';
 import { DiscordBot } from '../services/discord-bot';
-import { logError, formatErrorResponse } from '../middleware/error-handler';
+import { logError} from '../middleware/error-handler';
+import { GetChannelsResponse } from '../types';
+
+interface JoinChannelResponse {
+  success: boolean;
+  channelId?: string;
+  alreadyJoined?: boolean;
+  error?: string;
+}
+
+interface LeaveChannelResponse {
+  success: boolean;
+  channelId?: string;
+  error?: string;
+}
 
 export class DiscordHandler {
   private socket: Socket;
@@ -57,7 +71,7 @@ export class DiscordHandler {
     }
   }
 
-  private async handleGetChannels(callback?: (response: any) => void) {
+  private async handleGetChannels(callback?: (response: GetChannelsResponse) => void) {
     try {
       const channels = await this.discordBot.getUserChannels(this.socket.data.discordId);
 
@@ -71,7 +85,8 @@ export class DiscordHandler {
 
       const errorResponse = {
         success: false,
-        error: 'Failed to fetch channels'
+        error: 'Failed to fetch channels',
+        channels:[]
       };
 
       callback?.(errorResponse);
@@ -83,7 +98,10 @@ export class DiscordHandler {
     }
   }
 
-  private async handleJoinChannel(data: { channelId: string }, callback?: (response: any) => void) {
+  private async handleJoinChannel(
+    data: { channelId: string },
+    callback?: (response: JoinChannelResponse) => void
+  ) {
     try {
       const { channelId } = data;
       if (this.joinedChannels.has(channelId)) {
@@ -125,7 +143,10 @@ export class DiscordHandler {
     }
   }
 
-  private async handleLeaveChannel(data: { channelId: string }, callback?: (response: any) => void) {
+  private async handleLeaveChannel(
+    data: { channelId: string },
+    callback?: (response: LeaveChannelResponse) => void
+  ) {
     try {
       const { channelId } = data;
 
@@ -147,7 +168,7 @@ export class DiscordHandler {
     }
   }
 
-  private handleError(error: any) {
+  private handleError(error: unknown) {
     logError(error as Error, 'socketError', this.socket.data.userId);
     console.error('Socket error:', error);
 
@@ -178,25 +199,4 @@ export class DiscordHandler {
     this.joinedChannels.clear();
   }
 
-  private formatDatabaseMessage(dbMessage: any) {
-    return {
-      id: dbMessage.id,
-      content: dbMessage.content,
-      author: {
-        id: dbMessage.author_discord_id,
-        username: 'Unknown', // Would need to fetch from users table
-        displayName: 'Unknown',
-        avatar: undefined,
-        bot: false
-      },
-      timestamp: dbMessage.created_at.toISOString(),
-      channelId: dbMessage.channel_id,
-      serverId: dbMessage.server_id,
-      attachments: JSON.parse(dbMessage.attachments || '[]'),
-      embeds: JSON.parse(dbMessage.embeds || '[]'),
-      reactions: JSON.parse(dbMessage.reactions || '[]'),
-      edited: dbMessage.edited || false,
-      editedTimestamp: dbMessage.edited_at?.toISOString() || null
-    };
-  }
 } 

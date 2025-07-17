@@ -1,11 +1,17 @@
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthPayload;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: AuthPayload;
   }
 }
 
+export interface GetChannelsResponse {
+  success: boolean;
+  channels: DiscordChannel[];
+}
+export interface LeaveChannelResponse {
+  success: boolean;
+  channelId: string;
+}
 // Core message types
 export interface DiscordMessage {
   id: string;
@@ -98,13 +104,11 @@ export interface UserInfo {
 // Socket.IO event types
 export interface SocketEvents {
   // Client to Server
-  'get_channels': (callback?: (response: any) => void) => void;
-  'join_channel': (data: { channelId: string }, callback?: (response: any) => void) => void;
-  'leave_channel': (data: { channelId: string }, callback?: (response: any) => void) => void;
-  'request_history': (data: { channelId: string; before?: string; limit?: number }, callback?: (response: any) => void) => void;
-  'send_message': (data: { channelId: string; content: string }, callback?: (response: any) => void) => void;
+  'get_channels': (callback?: (response: GetChannelsResponse) => void) => void;
+  'join_channel': (data: { channelId: string }, callback?: (response: GetChannelsResponse) => void) => void;
+  'leave_channel': (data: { channelId: string }, callback?: (response: LeaveChannelResponse) => void) => void;
   'typing': (data: { channelId: string }) => void;
-  
+
   // Server to Client
   'channels_list': (channels: DiscordChannel[]) => void;
   'user_info': (userInfo: UserInfo) => void;
@@ -121,19 +125,8 @@ export interface SocketEvents {
   'rate_limited': (data: { message: string; retryAfter: number }) => void;
 }
 
-// API Response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
 
-export type ApiResult<T = any> = {
-  status: 'succeed' | 'failed';
-  data?: T;
-  message?: string;
-};
+
 
 // Rate limiting types
 export interface RateLimitConfig {
