@@ -1,19 +1,20 @@
-import type { Server } from 'socket.io'
+import type { Namespace } from 'socket.io'
 import { authenticateSocket } from '../middleware/auth'
 import { DiscordHandler } from '../handlers/discord-handler'
+import { DiscordBot } from '../services/discord-bot'
 
-export const setupDiscordNamespace = (io: Server) => {
-  const discordNamespace = io.of('/discord')
+export const setupDiscordNamespace = (discordNamespace:Namespace,discordBot:DiscordBot) => {
 
   // Authentication middleware
   discordNamespace.use(authenticateSocket)
 
   // Connection handler
   discordNamespace.on('connection', (socket) => {
+
     console.log(`🔗 User ${socket.data.user.username} connected to Discord namespace`)
 
     // Initialize Discord handler
-    const handler = new DiscordHandler(socket, discordNamespace)
+    const handler = new DiscordHandler(socket, discordBot)
     handler.setupEventHandlers()
 
     // Log connection stats

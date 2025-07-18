@@ -9,9 +9,8 @@ dotenv.config();
 import { setupDiscordNamespace } from './namespaces/discord';
 import { DiscordBot } from './services/discord-bot';
 import { createHealthRouter } from './routes/health';
-import { setupGlobalErrorHandlers } from './middleware/error-handler';
+import { setupGlobalErrorHandlers } from './middleware/errorHandler';
 import authRouter from './routes/auth';
-import discordRouter from './routes/discord';
 
 
 // Create Express app
@@ -59,13 +58,10 @@ const io = new Server(httpServer, {
   allowEIO3: true
 });
 
-// Setup Socket.IO namespaces
-setupDiscordNamespace(io);
 
-// Health check routes
+//Routes configuration
 app.use('/api', createHealthRouter(io));
 app.use('/api/auth', authRouter);
-app.use('/api/discord', discordRouter);
 
 // Basic route for testing
 app.get('/', (_req, res) => {
@@ -100,21 +96,26 @@ app.use('*', (req, res) => {
 // Initialize services and start server
 async function initialize() {
   try {
+    const discordNamespace = io.of('/discord')
     console.log('🚀 Initializing Discord Stream Backend...');
-    
+
+
     // Setup global error handlers
     setupGlobalErrorHandlers();
-    
+
     // Initialize Discord bot
-    const discordBot = DiscordBot.getInstance();
+    const discordBot = new DiscordBot(discordNamespace)
     const botToken = process.env['DISCORD_BOT_TOKEN'];
-    
+
     if (!botToken) {
       console.warn('⚠️  No Discord bot token provided. Bot functionality will be disabled.');
     } else {
-      await discordBot.initialize(botToken, io);
+      await discordBot.initialize(botToken);
       console.log('✅ Discord bot initialized');
     }
+
+    // Setup Socket.IO namespaces
+    setupDiscordNamespace(discordNamespace, discordBot);
 
     // Start server
     const PORT = parseInt(process.env['PORT'] || '3001');
@@ -136,9 +137,9 @@ async function initialize() {
 // Graceful shutdown
 const gracefulShutdown = (signal: string) => {
   console.log(`🛑 ${signal} received, shutting down gracefully`);
-  
+
   httpServer.close(() => {
-    console.log('✅ HTTP server closed');    
+    console.log('✅ HTTP server closed');
     console.log('✅ Server shutdown complete');
     process.exit(0);
   });

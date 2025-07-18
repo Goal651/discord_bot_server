@@ -1,17 +1,18 @@
 import express from 'express';
 import type { Server } from 'socket.io';
 import { HealthStatus, Metrics } from '../types';
+import { DiscordBot } from '../services/discord-bot';
 
 export const createHealthRouter = (io: Server) => {
     const router = express.Router();
-
+    const discordNamespace = io.of('/discord');
     // Health check endpoint
     router.get('/health', async (req, res) => {
         try {
-            const discordNamespace = io.of('/discord');
+
 
             const healthStatus: HealthStatus = {
-                status: 'healthy', // Assuming database health is no longer checked
+                status: 'healthy',
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime(),
                 connections: {
@@ -79,8 +80,7 @@ export const createHealthRouter = (io: Server) => {
     // Detailed status endpoint
     router.get('/status', async (req, res) => {
         try {
-            const discordNamespace = io.of('/discord');
-            const discordBot = (await import('../services/discord-bot')).DiscordBot.getInstance();
+            const discordBot = new DiscordBot(discordNamespace);
 
             const status = {
                 server: {

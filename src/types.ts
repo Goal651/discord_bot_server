@@ -1,17 +1,49 @@
+//For defining req.user type
 declare module 'express-serve-static-core' {
   interface Request {
     user?: AuthPayload;
   }
 }
 
+declare module 'socket.io' {
+  interface SocketData {
+    user?: AuthPayload;
+    userId?: string;
+    discordId?: string;
+    permissions?: string[];
+    [key: string]: unknown;
+  }
+}
+
+
+//Channels response type
 export interface GetChannelsResponse {
   success: boolean;
   channels: DiscordChannel[];
+  error?:string
 }
+
+export interface GetChannelResponse{
+  success:boolean
+  channel:DiscordChannel
+  error?:string
+}
+
+export interface JoinChannelResponse {
+  success: boolean;
+  channelId?: string;
+  alreadyJoined?: boolean;
+  error?: string;
+}
+
 export interface LeaveChannelResponse {
   success: boolean;
-  channelId: string;
+  channelId?: string;
+  error?: string;
 }
+
+
+
 // Core message types
 export interface DiscordMessage {
   id: string;
@@ -33,6 +65,7 @@ export interface DiscordMessage {
   editedTimestamp?: string;
 }
 
+//Discord message files
 export interface DiscordAttachment {
   id: string;
   filename: string;
@@ -44,6 +77,7 @@ export interface DiscordAttachment {
   height?: number;
 }
 
+//Discord message links
 export interface DiscordEmbed {
   title?: string;
   description?: string;
@@ -62,13 +96,14 @@ export interface DiscordEmbed {
   }>;
 }
 
+//Discord message reactions
 export interface DiscordReaction {
   emoji: string;
   count: number;
   users: string[];
 }
 
-// Channel types
+// Discord Channel type
 export interface DiscordChannel {
   id: string;
   name: string;

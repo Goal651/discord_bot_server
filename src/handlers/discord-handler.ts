@@ -1,31 +1,18 @@
-import type { Socket, Namespace } from 'socket.io';
+import type { Socket } from 'socket.io';
 import { DiscordBot } from '../services/discord-bot';
-import { logError} from '../middleware/error-handler';
-import { GetChannelsResponse } from '../types';
+import { logError} from '../middleware/errorHandler';
+import { GetChannelsResponse, JoinChannelResponse, LeaveChannelResponse } from '../types';
 
-interface JoinChannelResponse {
-  success: boolean;
-  channelId?: string;
-  alreadyJoined?: boolean;
-  error?: string;
-}
 
-interface LeaveChannelResponse {
-  success: boolean;
-  channelId?: string;
-  error?: string;
-}
 
 export class DiscordHandler {
   private socket: Socket;
-  private namespace: Namespace;
   private discordBot: DiscordBot;
   private joinedChannels: Set<string> = new Set();
 
-  constructor(socket: Socket, namespace: Namespace) {
+  constructor(socket: Socket,discordBot:DiscordBot) {
     this.socket = socket;
-    this.namespace = namespace;
-    this.discordBot = DiscordBot.getInstance();
+    this.discordBot =discordBot
   }
 
   setupEventHandlers() {
@@ -36,8 +23,6 @@ export class DiscordHandler {
     this.socket.on('get_channels', this.handleGetChannels.bind(this));
     this.socket.on('join_channel', this.handleJoinChannel.bind(this));
     this.socket.on('leave_channel', this.handleLeaveChannel.bind(this));
-
-    // Message events
 
     // Error handling
     this.socket.on('error', this.handleError.bind(this));
@@ -52,12 +37,21 @@ export class DiscordHandler {
       const channels = await this.discordBot.getUserChannels(this.socket.data.discordId);
       this.socket.emit('channels', channels);
 
-      // Send user info
-      this.socket.emit('user_info', {
-        userId: this.socket.data.userId,
-        username: this.socket.data.user.username,
-        permissions: this.socket.data.permissions
-      });
+      // Fetch real user info from Discord
+      const realUserInfo = await this.discordBot.getUserInfo(this.socket.data.discordId);
+      if (realUserInfo) {
+        this.socket.emit('user_info', realUserInfo);
+      } else {
+        // fallback to JWT info if Discord fetch fails
+        this.socket.emit('user_info', {
+          discordId: this.socket.data.user.discord_id,
+          username: this.socket.data.user.username,
+          email: this.socket.data.user.email,
+          isBot: this.socket.data.user.is_bot,
+          createdAt: this.socket.data.user.created_at,
+          updatedAt: this.socket.data.user.updated_at
+        });
+      }
 
       console.log(`📋 Sent initial data to user ${this.socket.data.user.username}`);
 
@@ -75,7 +69,7 @@ export class DiscordHandler {
     try {
       const channels = await this.discordBot.getUserChannels(this.socket.data.discordId);
 
-      this.socket.emit('channels_list', channels);
+      this.socket.emit('channels', channels);
       callback?.({ success: true, channels });
 
       console.log(`📋 Fetched ${channels.length} channels for user ${this.socket.data.user.username}`);
@@ -97,6 +91,7 @@ export class DiscordHandler {
       });
     }
   }
+  
 
   private async handleJoinChannel(
     data: { channelId: string },
@@ -109,27 +104,12 @@ export class DiscordHandler {
         return;
       }
 
-      const channelInfo = await this.discordBot.getChannelInfo(channelId);
 
       await this.socket.join(`channel:${channelId}`);
       this.joinedChannels.add(channelId);
 
       await this.discordBot.subscribeToChannel(channelId, this.socket.data.discordId);
-      this.socket.emit('channels', {
-        id: channelId,
-        name: channelInfo.name,
-        type: 'text',
-        serverId: channelInfo.serverId,
-        serverName: channelInfo.serverName,
-        position: 0,
-        unreadCount: 0,
-        isActive: true,
-        permissions: {
-          canRead: true,
-          canWrite: true,
-          canManage: false
-        }
-      });
+    
 
       callback?.({ success: true, channelId });
       console.log(`👥 User ${this.socket.data.user.username} joined channel ${channelId}`);

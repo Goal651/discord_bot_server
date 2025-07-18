@@ -11,7 +11,8 @@ const CLIENT_SECRET = process.env['DISCORD_CLIENT_SECRET']!;
 const REDIRECT_URI = process.env['DISCORD_REDIRECT_URI']!; 
 const FRONTEND_URL = process.env['FRONTEND_URL'] || 'http://localhost:3000';
 
-// 1. Redirect to Discord OAuth2 with state for CSRF protection
+
+//Handling user login
 router.get('/discord/login', (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   res.cookie('discord_oauth_state', state, { httpOnly: true, secure: false, sameSite: 'lax' });
@@ -26,7 +27,7 @@ router.get('/discord/login', (req, res) => {
   res.redirect(`https://discord.com/oauth2/authorize?${params.toString()}`);
 });
 
-// 2. Handle Discord OAuth2 callback and verify state
+//Handling received data from discord
 router.get('/discord/callback', async (req, res) => {
   const code = req.query['code'] as string;
   const state = req.query['state'] as string;

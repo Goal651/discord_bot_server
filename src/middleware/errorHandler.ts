@@ -89,9 +89,6 @@ export const logError = (error: Error, context: string, userId?: string) => {
   }
 
   console.error('Application Error:', errorInfo)
-  
-  // In production, you might want to send this to a logging service
-  // like Sentry, LogRocket, or a custom logging endpoint
 }
 
 // Error response formatter

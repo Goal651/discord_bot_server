@@ -1,5 +1,7 @@
 # Discord Stream Backend
 
+> **Note:** This project was built as part of the Railway Senior Full-Stack Engineer - Support application. The assignment: "Build a Discord bot that streams messages from a Discord channel into a web front-end, with a backend component."
+
 A robust Socket.IO backend for real-time Discord message streaming with authentication, rate limiting, and comprehensive error handling.
 
 ## Features
@@ -7,8 +9,6 @@ A robust Socket.IO backend for real-time Discord message streaming with authenti
 - 🔐 **JWT Authentication** - Secure user authentication with token-based sessions
 - 📡 **Socket.IO Integration** - Real-time bidirectional communication
 - 🤖 **Discord Bot Integration** - Seamless Discord API integration
-- 🗄️ **Database Persistence** - MySQL database for message storage
-- ⚡ **Rate Limiting** - Redis-based rate limiting with configurable limits
 - 🏥 **Health Monitoring** - Comprehensive health checks and metrics
 - 🔒 **Security** - Helmet.js security headers and CORS protection
 - 📊 **Metrics** - Real-time connection and performance metrics
@@ -19,8 +19,6 @@ A robust Socket.IO backend for real-time Discord message streaming with authenti
 - **Runtime**: Node.js with TypeScript
 - **Web Framework**: Express.js
 - **Real-time**: Socket.IO
-- **Database**: MySQL with connection pooling
-- **Cache**: Redis for rate limiting
 - **Discord**: discord.js library
 - **Security**: Helmet.js, CORS, JWT
 - **Monitoring**: Custom health checks and metrics
@@ -29,7 +27,7 @@ A robust Socket.IO backend for real-time Discord message streaming with authenti
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - MySQL 8.0+
 - Redis 6.0+
 - Discord Bot Token
@@ -37,23 +35,20 @@ A robust Socket.IO backend for real-time Discord message streaming with authenti
 ### Installation
 
 1. **Clone and install dependencies:**
+
    ```bash
-   cd backend
    npm install
    ```
 
 2. **Set up environment variables:**
+
    ```bash
    cp env.example .env
    # Edit .env with your configuration
    ```
 
-3. **Set up database:**
-   ```sql
-   CREATE DATABASE discord_stream;
-   ```
+3. **Start the server:**
 
-4. **Start the server:**
    ```bash
    # Development
    npm run dev
@@ -62,42 +57,6 @@ A robust Socket.IO backend for real-time Discord message streaming with authenti
    npm run build
    npm start
    ```
-
-## Environment Variables
-
-```env
-# Server Configuration
-NODE_ENV=development
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-
-# Database
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=password
-DB_NAME=discord_stream
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Discord Bot
-DISCORD_BOT_TOKEN=your_discord_bot_token_here
-DISCORD_CLIENT_ID=your_discord_client_id
-DISCORD_CLIENT_SECRET=your_discord_client_secret
-
-# Authentication
-JWT_SECRET=your_super_secret_jwt_key_here
-JWT_EXPIRES_IN=7d
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Socket.IO Configuration
-SOCKET_PING_TIMEOUT=60000
-SOCKET_PING_INTERVAL=25000
-SOCKET_MAX_HTTP_BUFFER_SIZE=1000000
-```
 
 ## API Endpoints
 
@@ -116,9 +75,6 @@ SOCKET_MAX_HTTP_BUFFER_SIZE=1000000
 - `get_channels` - Fetch user's available channels
 - `join_channel` - Join a Discord channel
 - `leave_channel` - Leave a Discord channel
-- `request_history` - Get message history
-- `send_message` - Send a message to Discord
-- `typing` - Send typing indicator
 
 #### Server to Client
 
@@ -129,98 +85,49 @@ SOCKET_MAX_HTTP_BUFFER_SIZE=1000000
 - `message_delete` - Message deleted
 - `messages_bulk` - Message history
 - `channel_update` - Channel information
-- `user_joined` - User joined channel
-- `user_left` - User left channel
-- `typing_start` - User started typing
-- `typing_stop` - User stopped typing
 - `error` - Error notification
 - `rate_limited` - Rate limit exceeded
 
-## Socket.IO Connection
+### Example Payloads
 
-### Frontend Connection Example
+#### `message` (Server → Client)
 
-```javascript
-import { io } from 'socket.io-client';
+```json
+{
+  "id": "123456789",
+  "content": "Hello, world!",
+  "author": {
+    "id": "987654321",
+    "username": "Alice"
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "channelId": "123456789",
+  "serverId": "111222333"
+}
+```
 
-const socket = io('http://localhost:3001/discord', {
-  auth: {
-    token: 'your_jwt_token_here'
+#### `join_channel` (Client → Server)
+
+```json
+{
+  "channelId": "123456789"
+}
+```
+
+#### `channels_list` (Server → Client)
+
+```json
+[
+  {
+    "id": "123456789",
+    "name": "general",
+    "type": "text",
+    "serverId": "111222333"
   }
-});
-
-// Listen for messages
-socket.on('message', (message) => {
-  console.log('New message:', message);
-});
-
-// Join a channel
-socket.emit('join_channel', { channelId: '123456789' }, (response) => {
-  if (response.success) {
-    console.log('Joined channel successfully');
-  }
-});
-
-// Send a message
-socket.emit('send_message', {
-  channelId: '123456789',
-  content: 'Hello, Discord!'
-}, (response) => {
-  if (response.success) {
-    console.log('Message sent:', response.messageId);
-  }
-});
+]
 ```
 
-## Database Schema
-
-### Messages Table
-```sql
-CREATE TABLE messages (
-  id VARCHAR(255) PRIMARY KEY,
-  discord_id VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  author_discord_id VARCHAR(255) NOT NULL,
-  channel_id VARCHAR(255) NOT NULL,
-  server_id VARCHAR(255) NOT NULL,
-  attachments JSON,
-  embeds JSON,
-  reactions JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  edited_at TIMESTAMP NULL,
-  edited BOOLEAN DEFAULT FALSE,
-  INDEX idx_channel_created (channel_id, created_at),
-  INDEX idx_author (author_discord_id)
-);
-```
-
-### Users Table
-```sql
-CREATE TABLE users (
-  discord_id VARCHAR(255) PRIMARY KEY,
-  username VARCHAR(255) NOT NULL,
-  display_name VARCHAR(255),
-  avatar_url TEXT,
-  is_bot BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### Channels Table
-```sql
-CREATE TABLE channels (
-  id VARCHAR(255) PRIMARY KEY,
-  discord_id VARCHAR(255) NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  server_id VARCHAR(255) NOT NULL,
-  position INT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_server (server_id)
-);
-```
+This repository contains only the backend service. The frontend should connect to the backend via Socket.IO, authenticate with a JWT, and display messages in real time. If you need a reference implementation, see [https://discord-bot.vercel.app](https://discord-bot.vercel.app) (replace with your actual repo if available).
 
 ## Development
 
@@ -238,7 +145,7 @@ npm run lint:fix    # Fix linting issues
 
 ### Project Structure
 
-```
+```cmd
 backend/
 ├── src/
 │   ├── handlers/          # Socket.IO event handlers
@@ -259,6 +166,7 @@ backend/
 ## Monitoring
 
 ### Health Check Response
+
 ```json
 {
   "status": "healthy",
@@ -277,6 +185,7 @@ backend/
 ```
 
 ### Metrics Response
+
 ```json
 {
   "connections": {
@@ -302,6 +211,21 @@ backend/
   }
 }
 ```
+
+## Testing
+
+This project includes unit tests for authentication, message handling, and error handling. To run tests:
+
+```bash
+npm test
+```
+
+## Design Decisions
+
+- **Socket.IO** is used for real-time streaming and channel-based rooms, allowing efficient message delivery to only those users who have joined a channel.
+- **JWT** provides secure, stateless authentication for all socket connections.
+- **Modular code structure** makes it easy to extend the backend with new features, events, or integrations.
+- **Health and metrics endpoints** are included for easy deployment monitoring and observability.
 
 ## Deployment
 
@@ -368,7 +292,6 @@ volumes:
 ## Security
 
 - **JWT Authentication** - Secure token-based authentication
-- **Rate Limiting** - Redis-based rate limiting per user
 - **CORS Protection** - Configurable CORS policies
 - **Helmet.js** - Security headers and CSP
 - **Input Validation** - Message content validation
@@ -376,8 +299,6 @@ volumes:
 
 ## Performance
 
-- **Connection Pooling** - MySQL connection pooling
-- **Redis Caching** - Rate limiting and session storage
 - **Socket.IO Optimization** - Configurable ping/pong intervals
 - **Memory Management** - Proper cleanup on disconnect
 - **Graceful Shutdown** - Clean resource cleanup
@@ -386,22 +307,12 @@ volumes:
 
 ### Common Issues
 
-1. **Database Connection Failed**
-   - Check MySQL service is running
-   - Verify database credentials in `.env`
-   - Ensure database exists
-
-2. **Discord Bot Not Connecting**
+1. **Discord Bot Not Connecting**
    - Verify bot token is correct
    - Check bot has required permissions
    - Ensure bot is added to servers
 
-3. **Redis Connection Failed**
-   - Check Redis service is running
-   - Verify Redis URL in `.env`
-   - Check Redis authentication
-
-4. **Socket.IO Connection Issues**
+2. **Socket.IO Connection Issues**
    - Verify CORS configuration
    - Check authentication token
    - Ensure frontend URL is correct
@@ -428,8 +339,4 @@ The server provides detailed logging:
 
 ## License
 
-MIT License - see LICENSE file for details. # discord_bot_server
-# discord_bot_server
-# discord_bot_server
-# discord_bot_server
-# discord_bot_server
+MIT License - see LICENSE file for details.

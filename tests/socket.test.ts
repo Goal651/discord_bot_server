@@ -25,19 +25,20 @@ describe('Discord Socket.IO Server ', () => {
 
   beforeAll(async () => {
     try {
+     
       httpServer = createServer();
       io = new Server(httpServer);
-
+      const discordNamespace=io.of('/discord')
       // Initialize Discord bot with the real io instance
-      const discordBot = DiscordBot.getInstance();
+      const discordBot = new DiscordBot(discordNamespace)
       const botToken = process.env['DISCORD_BOT_TOKEN'];
       if (!botToken) {
         console.warn('⚠️  No Discord bot token provided. Bot functionality will be disabled.');
       } else {
-        await discordBot.initialize(botToken, io);
+        await discordBot.initialize(botToken);
         console.log('✅ Discord bot initialized');
       }
-      setupDiscordNamespace(io);
+      setupDiscordNamespace(discordNamespace,discordBot);
       const token = generateToken(TEST_USER);
       await new Promise<void>(resolve => {
         httpServer.listen(() => {
