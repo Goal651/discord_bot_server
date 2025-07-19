@@ -2,9 +2,9 @@ jest.setTimeout(30000); // 30 seconds
 import { createServer, Server as HttpServer } from "http";
 import Client, { Socket as ClientSocket } from "socket.io-client";
 import { Server } from "socket.io";
-import { setupDiscordNamespace } from "../src/namespaces/discord";
-import { generateToken } from "../src/middleware/auth";
-import { DiscordBot } from "../src/services/discord-bot";
+import { setupDiscordNamespace } from "../src/namespaces/discordNamespace";
+import { generateToken } from "../src/middleware/discordAuth";
+import { DiscordBot } from "../src/services/discordBot.service";
 import { DiscordChannel, GetChannelsResponse, LeaveChannelResponse } from "../src/types";
 
 const TEST_USER = {
@@ -25,10 +25,10 @@ describe('Discord Socket.IO Server ', () => {
 
   beforeAll(async () => {
     try {
-     
+
       httpServer = createServer();
       io = new Server(httpServer);
-      const discordNamespace=io.of('/discord')
+      const discordNamespace = io.of('/discord')
       // Initialize Discord bot with the real io instance
       const discordBot = new DiscordBot(discordNamespace)
       const botToken = process.env['DISCORD_BOT_TOKEN'];
@@ -38,7 +38,7 @@ describe('Discord Socket.IO Server ', () => {
         await discordBot.initialize(botToken);
         console.log('✅ Discord bot initialized');
       }
-      setupDiscordNamespace(discordNamespace,discordBot);
+      setupDiscordNamespace(discordNamespace, discordBot);
       const token = generateToken(TEST_USER);
       await new Promise<void>(resolve => {
         httpServer.listen(() => {

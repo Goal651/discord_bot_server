@@ -44,11 +44,8 @@ export const authenticateSocket = async (socket: Socket, next: (err?: Error) => 
 // Helper function to generate JWT token (for testing)
 export const generateToken = (payload: AuthPayload): string => {
   const secret = process.env['JWT_SECRET'];
-  console.log(secret)
   if (!secret) throw new Error('JWT_SECRET is not set');
-  const options: SignOptions = {
-    expiresIn: '7d'
-  };
+  const options: SignOptions = { expiresIn: '7d' };
   return jwt.sign(
     payload as unknown as Record<string, unknown>,
     secret as Secret,

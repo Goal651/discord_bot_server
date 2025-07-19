@@ -6,11 +6,11 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 dotenv.config();
-import { setupDiscordNamespace } from './namespaces/discord';
-import { DiscordBot } from './services/discord-bot';
-import { createHealthRouter } from './routes/health';
+import { setupDiscordNamespace } from './namespaces/discordNamespace';
+import { DiscordBot } from './services/discordBot.service';
+import { createHealthRouter } from './routes/health.route';
 import { setupGlobalErrorHandlers } from './middleware/errorHandler';
-import authRouter from './routes/auth';
+import authRouter from './routes/auth.route';
 
 
 // Create Express app

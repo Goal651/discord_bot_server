@@ -1,7 +1,7 @@
 import express from 'express';
 import type { Server } from 'socket.io';
 import { HealthStatus, Metrics } from '../types';
-import { DiscordBot } from '../services/discord-bot';
+import { DiscordBot } from '../services/discordBot.service';
 
 export const createHealthRouter = (io: Server) => {
     const router = express.Router();
