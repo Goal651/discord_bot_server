@@ -1,11 +1,11 @@
 import type { Socket } from 'socket.io';
-import { DiscordBot } from '../services/discord-bot';
+import { DiscordBot } from '../services/discordBot.service';
 import { logError} from '../middleware/errorHandler';
 import { GetChannelsResponse, JoinChannelResponse, LeaveChannelResponse } from '../types';
 
 
 
-export class DiscordHandler {
+export class DiscordSocketHandler {
   private socket: Socket;
   private discordBot: DiscordBot;
   private joinedChannels: Set<string> = new Set();

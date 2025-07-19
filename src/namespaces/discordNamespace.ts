@@ -1,7 +1,7 @@
 import type { Namespace } from 'socket.io'
-import { authenticateSocket } from '../middleware/auth'
-import { DiscordHandler } from '../handlers/discord-handler'
-import { DiscordBot } from '../services/discord-bot'
+import { authenticateSocket } from '../middleware/discordAuth'
+import { DiscordSocketHandler } from '../handlers/discordSocketHandler'
+import { DiscordBot } from '../services/discordBot.service'
 
 export const setupDiscordNamespace = (discordNamespace:Namespace,discordBot:DiscordBot) => {
 
@@ -14,7 +14,7 @@ export const setupDiscordNamespace = (discordNamespace:Namespace,discordBot:Disc
     console.log(`🔗 User ${socket.data.user.username} connected to Discord namespace`)
 
     // Initialize Discord handler
-    const handler = new DiscordHandler(socket, discordBot)
+    const handler = new DiscordSocketHandler(socket, discordBot)
     handler.setupEventHandlers()
 
     // Log connection stats
